@@ -1,0 +1,41 @@
+# Specification for vCard and QR Code Generation Script
+
+Overview
+This script generates vCards and corresponding QR codes based on data provided in a CSV file. Each vCard contains information about a person, and a QR code is generated for each vCard.
+
+Usage
+1. Make sure you have Python installed on your system.
+2. Install the required libraries by running:
+    
+    pip install requests
+    
+3. Prepare a CSV file named "names.csv" containing the data in the following format: last name, first name, title, email, and phone.
+4. Run the script using the following command:
+    
+    python3 v_cards.py
+ 
+
+Dependencies
+- requests
+
+Input
+- CSV file: "names.csv"
+  - Format: last name, first name, title, email, phone
+
+Output
+The script creates vCard (.vcf) files and QR code (.png) images in the "v_cards" directory.
+
+File Structure
+- v_cards.py (replace with the actual name of your Python script)
+- names.csv
+- v_cards/
+  - Generated vCard (.vcf) files
+  - Generated QR code (.png) images
+
+Notes
+- Ensure proper internet connectivity as the script relies on the Google Charts API to generate QR codes.
+
+Example
+For each person in "names.csv," the script generates a vCard file and a corresponding QR code in the "v_cards" directory.
+
+
