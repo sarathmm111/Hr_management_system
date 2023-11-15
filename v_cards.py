@@ -2,6 +2,7 @@ import os
 
 import csv
 
+import requests
 
 def generate_vcard(lname, fname, title, email, phone):
     vcard = f"""BEGIN:VCARD
@@ -17,6 +18,14 @@ REV:20150922T195243Z
 END:VCARD
 """
     return vcard
+    
+def generate_qr_code(vcard, fname, lname, output_directory):
+    url = f"https://chart.googleapis.com/chart?cht=qr&chs=500x500&chl={vcard}"
+    response = requests.get(url)
+    qr_file = f"{output_directory}/{fname[:1]}_{lname}_qr.png"
+
+    with open(qr_file, "wb") as img:
+        img.write(response.content)
 
 def genarate_vcards(output_directory="v_cards"):
     if not os.path.exists(output_directory):
@@ -31,6 +40,8 @@ def genarate_vcards(output_directory="v_cards"):
 
             with open(vcard_path, "w") as vcard_file:
                 vcard_file.write(vcard)
+                
+            generate_qr_code(vcard, fname, lname, output_directory)
                 
 if __name__ == "__main__":
     genarate_vcards()
