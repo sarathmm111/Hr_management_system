@@ -1,21 +1,25 @@
-# VCard Generator with QR Code
+# HR Management
 
-This script generates vCard files and corresponding QR codes for each entry in a CSV file. It uses the Google Charts API to generate QR codes.
+This Python script converts data from a database into VCards. Each row in database corresponds to an individual's contact information, and the script creates a VCard for each person.
 
-## Prerequisites
+    
+   Data base contains with the following columns: Last Name, First Name, Designation, Email, and Phone
+   
+# MODULES installation
 
-Before running the script, make sure you have the following:
+python3,psycopg2,requests
 
-- Python 3.x installed
-- Required Python libraries installed (install using `pip install requests` if not already installed)
 
-## How to Use
+# COMMANDS
 
-1. Clone the repository or download the script.
-2. Create a CSV file named `names.csv` with the following columns: Last Name, First Name, Title, Email, and Phone.
-3. Run the script:
+inittb: Initialize the database and create table.
+load: Load data into the database from a CSV file.
+genvcard: genrate_vcard_file,
+initlv: add_data_to_leaves_table,
+initds: add_data_to_designation_table,
+rtrlv: retrive_data_from_new_table,
+rtrcsv: generate_leave_csv,
 
-   ```bash
-   python v_cards.py
+
 
 
