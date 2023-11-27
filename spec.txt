@@ -1,41 +1,117 @@
-# Specification for vCard and QR Code Generation Script
+1) OBJECTIVE:
 
-Overview
-This script generates vCards and corresponding QR codes based on data provided in a CSV file. Each vCard contains information about a person, and a QR code is generated for each vCard.
+   Generate vcard and qrcode for a list of employees whose the details are provided in a CSV file.
 
-Usage
-1. Make sure you have Python installed on your system.
-2. Install the required libraries by running:
+
+
+2) INPUT:
+   
+   2.1) CSV file from which data is extracted needs to be provided as command line argument to load data.
     
-    pip install requests
+   2.2) General format of data provided in CSV file is given below;
+           [last_name, first_name, job, email_address, phone_number]
+           
+           Example of data written in this format will be like this:
+             
+                Morgan, Melinda, Advertising Copywriter, melin.morga@smith_write.com, +71-(391)-2934
+                
+   2.3) There is a sample CSV file named test_data.csv to test the program. 
+              
+
+
+3. OUTPUT:
+
+   3.1) There will be two output one is the vCard file for each employee and the other is a qr code .png format
+        file which can be scanned using a mobile phone camera to get the data regarding an employee.
+       
+   3.2) qr code data is the same data witten in vCard file format and is generated for each employee. 
+        Name of both vCard and qr code files will be the mail-id of employer.
+
+   3.3) Data inside a simple vCard file is of this format:
+        
+            BEGIN:VCARD
+            VERSION:2.1
+            N:Kathy;Lopez
+            FN:Lopez Kathy
+            ORG:Authors, Inc.
+            TITLE:Horticulturist, amenity
+            TEL;WORK;VOICE:001-383-311-4585
+            ADR;WORK:;;100 Flat Grape Dr.;Fresno;CA;95555;United States of America
+            EMAIL;PREF;INTERNET:kathy.lopez@warren.org
+            REV:20150922T195243Z
+            END:VCARD
+            
+   3.4) Output of the data regarding leaves generated on screen example:
+            Name of employee : Anne Smith
+            Email : smithanne@outlook.com
+            Designation : Staff Engineer
+            Maximum alloted leaves : 20
+            Available leaves = 15 
+
+
+
+4. EXECUTION:
+   4.1) Database to which the data needs to be added should be created manually (postgres is used for databse manipulations)
+   
+   4.2) The program needs to be executed from command line.
+        The CSV file from which the data needs to be extracted should be provided as command line argument when needed to load
+        the data.
+   
+   4.3) Format for providing command line argument and running file is 'python3 <program_file_name> <arguments>' .
+   
+   4.4) Data will be generated on the folder specified in the program and the direcory to store and data will be created 
+        in the folder which the user use for execution of program.
+   
+   4.5) Execution of arguments:
+   
+          4.5.1) 
+                  
+                 python3 v_cards.py -h/--help -> This command provides with help regarding what
+                 this program is used for and information regarding all its other arguments.
+                 
+                 python3 v_cards.py -v/--verbose -> Used to print the debug log data in the terminal
+                 showing the debug log data for all the file generated. Running without -v/--verbos will show you information 
+                 regarding whether the files are generated or not.
+                 
+                 python3 v_cards.py -d/--dbname -> By default a database name will be present in parser, if the
+                 user needs to add a new database name use this subparser command to do the same. Or else you can use the
+                 default database.
+                 
+                 python3 v_cards.py inittb -> This command is used to create the database tables that are needed to 
+                 store the data. The query for creation of tables is obtained from a file init.sql
+                 
+                 python3 v_cards.py load file -> load command is used to load data to database tables and file command
+                 along with load command is used to add csv file name from which data is loaded to databse.
+                 
+                 python3 v_cards.py rtr id --vcard --vcf --qrcd -> rtr is used to retrieve data of a particular employee
+                 and all other subcommands are optional --vcard is used to show the vcard details of user in terminal, id should be used
+                 to get the details of thet particular employee and this id is ther employee-id , --vcf is used to generate vcard for
+                 that particular employee, --qrcd is used to generate qrcode for that employee.
+                 
+                 python3 v_cards.py genvcard -n/--number --qrcd -> genvcard is user to generate vcard for a particular
+                 number of employee, -n/--number is used to generate that much number of employee's vcards, --qrcd is used to generate
+                 qrcode for given number of employees. By default this number is set as 10.
+                 
+                 python3 v_cards.py initlv date employee_id reason -> initlv is used to insert data to leaves table. 'date' is
+                 the date in which employee was leave. employee_id is the id of employee from details table reason is the cause of leave.
+                 
+                 python3 v_cards.py initds -> This command is used to add data to designation table and done by calling a file
+                 called designation.sql where the query to input data is loaded.
+                 
+                 python3 v_cards.py rtrlv employee_id -> Command is used to retrieve leaves data regarding an employee by providing
+                 employee_id after typing rtrlv, the data will be shown on terminal.
+                 
+                 python3 v_cards.py rtrcsv -f -> rtrcsv command is to get details of leaves of each employee on a csv file and -f
+                 is a subcommand that can be used to provide csv filename without the file extention bydefault a filename is set 'lv.csv'.
+                 
+                 
+                 
+                 
+                 
+                 
+                 
+                 
+                 
+                 
+            
     
-3. Prepare a CSV file named "names.csv" containing the data in the following format: last name, first name, title, email, and phone.
-4. Run the script using the following command:
-    
-    python3 v_cards.py
- 
-
-Dependencies
-- requests
-
-Input
-- CSV file: "names.csv"
-  - Format: last name, first name, title, email, phone
-
-Output
-The script creates vCard (.vcf) files and QR code (.png) images in the "v_cards" directory.
-
-File Structure
-- v_cards.py (replace with the actual name of your Python script)
-- names.csv
-- v_cards/
-  - Generated vCard (.vcf) files
-  - Generated QR code (.png) images
-
-Notes
-- Ensure proper internet connectivity as the script relies on the Google Charts API to generate QR codes.
-
-Example
-For each person in "names.csv," the script generates a vCard file and a corresponding QR code in the "v_cards" directory.
-
-
