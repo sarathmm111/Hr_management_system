@@ -6,6 +6,8 @@ import os
 import sys
 import psycopg2 as pg
 import requests
+import db
+import sqlalchemy as sa
 
 logger = None
 
@@ -137,20 +139,28 @@ def logger(is_logger):
 
 
 def create_table(args):
-    update_database_name(args.dbname)
-    with open("init.sql", "r") as f:
-        query = f.read()
-        logger.debug(query)
-    try:
-        conn = pg.connect(dbname=args.dbname)
-        cursor = conn.cursor()
-        cursor.execute(query)
-        conn.commit()
-        logger.info("created tables")
-        conn.close()
-    except (pg.errors.DuplicateTable, pg.OperationalError) as e:
-        raise HRException(e)
+  try:
+    db_uri = f"postgresql:///{args.dbname}"
+    session = db.get_session(db_uri)
+    engine = db.create_engine(db_uri)
+    tables = ['employee','leaves','designation']
+    for table in tables:
+      table_exists = engine.dialect.has_table(engine.connect(), table , schema='public')
 
+    if table_exists:
+       logger.error(f"All tables exists")
+    else:
+      db.create_all(db_uri)
+      designations = [db.designation(title="Staff Engineer", max_leaves=20),
+                      db.designation(title="Senior Engineer", max_leaves=18),
+                      db.designation(title="Junior Engineer", max_leaves=12),
+                      db.designation(title="Technical Lead", max_leaves=12),
+                      db.designation(title="Project Manager", max_leaves=15)]
+      session.add_all(designations)
+      session.commit()
+      logger.info("Tables created")
+  except (sa.exc.OperationalError,pg.OperationalError) as e:
+    raise HRException(e)
 
 def add_data_to_table_details(args):
     conn = pg.connect(dbname=args.dbname)
