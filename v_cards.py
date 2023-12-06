@@ -163,259 +163,257 @@ def create_table(args):
     raise HRException(e)
 
 def add_data_to_table_details(args):
-    conn = pg.connect(dbname=args.dbname)
-    cursor = conn.cursor()
-    with open(args.file, "r") as f:
-        reader = csv.reader(f)
-        for last_name, first_name, title, email, ph_no in reader:
-            logger.debug("Inserted data of %s", email)
-            insert_info = "INSERT INTO details (lastname,firstname,title,email,phone_number) VALUES (%s,%s,%s,%s,%s)"
-            cursor.execute(insert_info, (last_name, first_name, title, email, ph_no))
-        conn.commit()
-    logger.info("data inserted into details table")
-    conn.close()
+  db_uri = f"postgresql:///{args.dbname}"
+  session = db.get_session(db_uri)
+  try:
+    with open(args.file,'r') as f:
+      reader = csv.reader(f)
+      for last_name,first_name,title,email,phone in reader:
+        q = sa.select(db.designation).where(db.designation.title==title)
+        designation = session.execute(q).scalar_one()
+        employee = db.employee(lastname=last_name,firstname=first_name,title=designation,email=email,ph_no=phone)
+        logger.debug("Inserted data of %s",email)
+        session.add(employee)
+      session.commit()
+    logger.info("data inserted into employee table")
+  except (pg.errors.UniqueViolation,sa.exc.IntegrityError) as e:
+    raise HRException("data provided already exists in table employee")
 
 
 def retrieving_data_from_database(args):
-    conn = pg.connect(dbname=args.dbname)
-    cursor = conn.cursor()
-    try:
-        query = "SELECT lastname,firstname,title,email,phone_number FROM details where serial_number = %s"
-        cursor.execute(query, (args.id,))
-        conn.commit()
-        lastname, firstname, title, email, phone_number = cursor.fetchone()
-        print(
-            f"""Name        : {firstname} {lastname}
-              Designation : {title}
-              Email       : {email}
-              Phone       : {phone_number}"""
-        )
-        if args.vcard:
-            print("\n", implement_vcf(lastname, firstname, title, email, phone_number))
-            logger.debug(lastname, firstname, title, email, phone_number)
-        if args.vcf:
-            if not os.path.exists("vcf_files"):
-                os.mkdir("vcf_files")
-            imp_vcard = implement_vcf(lastname, firstname, title, email, phone_number)
-            with open(f"vcf_files/{email}.vcf", "w") as j:
-                j.write(imp_vcard)
-                logger.debug(f"generated vcard of{email}")
-            logger.info(f"generated vcard of {email}")
-        if args.qrcode:
-            if not os.path.exists("vcf_files"):
-                os.mkdir("vcf_files")
-            imp_qrcode = implement_qrcode(
-                lastname, firstname, title, email, phone_number
-            )
-            with open(f"vcf_files/{email}.qr.png", "wb") as f:
-                f.write(imp_qrcode)
-                logger.debug(f"generated qr code of {email}")
-            logger.info(f"Done generating qrcode of {email}")
-        conn.close()
-    except TypeError as e:
-        raise HRException("employee_id not found")
+  db_uri = f"postgresql:///{args.dbname}"
+  session = db.get_session(db_uri)
+  try:
+    query =  ( sa.select
+               (db.employee.lastname,
+                db.employee.firstname,
+                db.designation.title,
+                db.employee.email,
+                db.employee.ph_no)
+               .where(db.employee.title_id==db.designation.jobid,
+                      db.employee.empid==args.id)
+              )
+    x=session.execute(query).fetchall()
+    session.commit()
+    for lastname,firstname,title,email,phone_number in x:
+      print(f"""Name        : {firstname} {lastname}
+                Designation : {title}
+                Email       : {email}
+                Phone       : {phone_number}""")
+      if args.vcard:
+         print("\n",implement_vcf(lastname,firstname,title,email,phone_number))
+         logger.debug(lastname,firstname,title,email,phone_number)
+      if args.vcf:
+        if not os.path.exists('vcf_files'):
+          os.mkdir('vcf_files') 
+        imp_vcard = implement_vcf(lastname,firstname,title,email,phone_number)
+        with open(f'vcf_files/{email}.vcf','w') as j:
+           j.write(imp_vcard)
+           logger.debug(f"generated vcard of  {email}")
+        logger.info(f"generated vcard of  {email}")
+      if args.qrcode:
+         if not os.path.exists('vcf_files'):
+           os.mkdir('vcf_files')
+         imp_qrcode = implement_qrcode(lastname,firstname,title,email,phone_number)
+         with open(f'vcf_files/{email}.qr.png','wb') as f:
+            f.write(imp_qrcode)
+            logger.debug(f"generated qrcode of {email}")
+         logger.info(f"generated qrcode of {email}")
+  except Exception as e:
+    logger.error("Employee with id %s not found",args.id)
 
 
-def genrate_vcard_file(args):
-    if not os.path.exists("vcf_files"):
-        os.mkdir("vcf_files")
-    count = 1
-    conn = pg.connect(dbname=args.dbname)
-    cursor = conn.cursor()
-    try:
-        query = "SELECT lastname,firstname,title,email,phone_number FROM details"
-        cursor.execute(query)
-        data = cursor.fetchall()
-        details = []
-        for i in range(0, args.number):
-            details.append(data[i])
-            for lastname, firstname, title, email, phone_number in details:
-                imp_vcard = implement_vcf(
-                    lastname, firstname, title, email, phone_number
-                )
-                logger.debug("Writing row %d", count)
-                count += 1
-                with open(f"vcf_files/{email}.vcf", "w") as j:
-                    j.write(imp_vcard)
-                if args.qrcode:
-                    imp_qrcode = implement_qrcode(
-                        lastname, firstname, title, email, phone_number
-                    )
-                    logger.debug(f"Generating qrcode for {email}")
-                    with open(f"vcf_files/{email}.qr.png", "wb") as f:
-                        f.write(imp_qrcode)
-            logger.info(f"generated qrcode of {email}")
-        logger.info(f"generated qrcode of {args.number} employees")
-        conn.close()
-    except IndexError as e:
-        raise HRException("number of employee out of limit")
+def generate_vcard_file(args):
+  db_uri = f"postgresql:///{args.dbname}"
+  session = db.get_session(db_uri)
+  if not os.path.exists('vcf_files'):
+    os.mkdir('vcf_files')
+  count = 1
+  try:
+    query = (sa.select
+             (db.employee.lastname,
+              db.employee.firstname,
+              db.designation.title,
+              db.employee.email,
+              db.employee.ph_no)
+             .where(db.employee.title_id==db.designation.jobid)
+             )
+    data = session.execute(query).fetchall()
+    details = []
+    for i in range(0,args.number):
+      details.append(data[i])
+      for lastname,firstname,title,email,phone_number in details:
+          imp_vcard = implement_vcf(lastname,firstname,title,email,phone_number)
+          logger.debug("Writing row %d", count)
+          count +=1
+          with open(f'vcf_files/{email}.vcf','w') as j:
+             j.write(imp_vcard)
+          if args.qrcode:
+             imp_qrcode = implement_qrcode(lastname,firstname,title,email,phone_number)
+             logger.debug(f"generating qrcode of {email}")
+             with open(f'vcf_files/{email}.qr.png','wb') as f:
+               f.write(imp_qrcode)
+      logger.info(f"generated qrcode of {email}")
+    logger.info(f"generated qrcode of {args.number} employees") 
+  except IndexError as e:
+    raise HRException ("number of employee out of boundary")
 
 
 def add_data_to_leaves_table(args):
-    conn = pg.connect(dbname=args.dbname)
-    cursor = conn.cursor()
-    try:
-        insert_info = (
-            """INSERT INTO leaves (date,employee_id,reason) VALUES (%s,%s,%s)"""
-        )
-        cursor.execute(insert_info, (args.date, args.employee_id, args.reason))
-        conn.commit()
-        logger.info("data inserted to leaves table")
-        conn.close()
-    except (pg.errors.ForeignKeyViolation, pg.errors.UniqueViolation) as e:
-        raise HRException(e)
+  db_uri = f"postgresql:///{args.dbname}"
+  session = db.get_session(db_uri)
+  try:
+    insert_info = (db.leaves(empid=args.employee_id,date=args.date,reason=args.reason))
+    session.add(insert_info)
+    session.commit()
+    logger.info("data inserted to leaves table")
+  except (pg.errors.UniqueViolation,sa.exc.IntegrityError) as e:
+      raise HRException (e)
 
 
 def retrieve_data_from_new_table(args):
-    conn = pg.connect(dbname=args.dbname)
-    cursor = conn.cursor()
-    try:
-        retrieve_count = f"""select count (d.serial_number) as count, d.firstname, d.lastname , d.email, g.designation , g.num_of_leaves 
-                    from details d join leaves l on d.serial_number = l.employee_id 
-                    join designation g on d.title = g.designation 
-                    where d.serial_number= %s group by d.serial_number,d.firstname,d.email,g.num_of_leaves,g.designation;"""
-        cursor.execute(retrieve_count, (args.employee_id,))
-        data = cursor.fetchall()
-        if data != []:
-            for (
-                count_serial_number,
-                firstname,
-                lastname,
-                email,
-                designation,
-                num_of_leaves,
-            ) in data:
-                leaves = count_serial_number
-                max_leaves = num_of_leaves
-                leaves = max_leaves - leaves
-                if leaves <= 0:
-                    available_leaves = 0
-                else:
-                    available_leaves = leaves
-                d = f"""Name of employee : {firstname} {lastname}
+  db_uri = f"postgresql:///{args.dbname}"
+  session = db.get_session(db_uri)
+  try:
+    retrieve_count = (
+                 sa.select
+                    (sa.func.count(db.employee.empid),
+                    db.employee.firstname,
+                    db.employee.lastname,
+                    db.designation.title,
+                    db.employee.email,
+                    db.designation.max_leaves
+                    )
+                    .where(db.employee.empid==args.employee_id,
+                           db.designation.jobid==db.employee.title_id,
+                           db.leaves.empid==db.employee.empid)
+                    .group_by(db.employee.empid,
+                              db.designation.title,
+                              db.designation.max_leaves)
+                  )
+
+    data = session.execute(retrieve_count).fetchall()
+    if data != []: 
+       for count_serial_number,firstname,lastname,email,designation,num_of_leaves in data:
+         leaves = count_serial_number
+         max_leaves = num_of_leaves
+         leaves = max_leaves - leaves
+         if leaves <= 0:
+           available_leaves = 0
+         else:
+           available_leaves = leaves
+         d = f"""Name of employee : {firstname} {lastname}
                 Email : {email}
                 Designation : {designation}
                 Maximum alloted leaves : {num_of_leaves}
                 Available leaves : {available_leaves}
                 Total leaves taken : {count_serial_number}"""
-                print(d)
-                conn.commit()
-        if data == []:
-            cursor.execute(
-                """select d.num_of_leaves as number,t.firstname,t.lastname , t.email, d.designation from designation d 
-                        join details t on d.designation=t.title where t.serial_number = %s;""",
-                (args.employee_id,),
-            )
-            leaves = cursor.fetchall()
-            for num_of_leaves, firstname, lastname, email, designation in leaves:
-                d = f"""Name of employee : {firstname} {lastname}
-                  Email : {email}
-                  Designation : {designation}
-                  Maximum alloted leaves : {num_of_leaves}
-                  Available leaves : {num_of_leaves}
-                  Total leaves taken : 0"""
-                print(d)
-            conn.commit()
-        conn.close()
-    except UnboundLocalError as e:
-        print(f"Error: {e}")
-        raise HRException("provided employee id is not in tables")
+         print(d)
+    if data == []:
+       query = (
+                sa.select
+                (db.designation.max_leaves,
+                db.employee.firstname,
+                db.employee.lastname,
+                db.employee.email,
+                db.designation.title
+                )
+                .where(db.employee.empid == args.employee_id,
+                       db.designation.jobid==db.employee.title_id)
+                )
+       leaves = session.execute(query).fetchall()
+       for num_of_leaves,firstname,lastname,email,designation in leaves:
+         d = f"""Name of employee : {firstname} {lastname}
+                        Email : {email}
+                        Designation : {designation}
+                        Maximum alloted leaves : {num_of_leaves}
+                        Available leaves : {num_of_leaves}
+                        Total leaves taken : 0"""
+       print(d) 
+  except UnboundLocalError as e:
+    raise HRException ("provided employee id is not in tables")
 
 
 def generate_leave_csv(args):
-    with open(f"{args.filename}.csv", "w") as f:
-        data = csv.writer(f)
-        a = (
-            "Employee_id",
-            "firstname",
-            "lastname",
-            "email",
-            "title",
-            "Total number of leaves",
-            "Leaves left",
-        )
-        data.writerow(a)
-
-    conn = pg.connect(dbname=args.dbname)
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(serial_number) FROM details")
-    x = cursor.fetchall()
-    for i in x:
-        count = i[0]
-
-    for i in range(1, count + 1):
-        insert_info = """SELECT l.employee_id FROM leaves l JOIN details d ON l.employee_id = d.serial_number WHERE d.serial_number= %s"""
-        cursor.execute(insert_info, (i,))
-        data = cursor.fetchall()
-
-        if data == []:
-            info = """SELECT d.serial_number, d.firstname, d.lastname, d.email, d.title, g.num_of_leaves
-                      FROM details d
-                      JOIN designation g ON g.designation = d.title
-                      WHERE d.serial_number = %s"""
-            cursor.execute(info, (i,))
-            n = cursor.fetchall()
-
-            for serial_number, firstname, lastname, email, title, num_of_leaves in n:
-                with open(f"{args.filename}.csv", "a") as f:
-                    data = csv.writer(f)
-                    a = (
-                        serial_number,
-                        firstname,
-                        lastname,
-                        email,
-                        title,
-                        num_of_leaves,
-                        num_of_leaves,
-                    )
-                    data.writerow(a)
-
-        else:
-            info = """SELECT d.serial_number, d.firstname, d.lastname, d.email, d.title, g.num_of_leaves
-                      FROM details d
-                      JOIN designation g ON g.designation = d.title
-                      WHERE d.serial_number = %s"""
-            cursor.execute(info, (i,))
-            n = cursor.fetchall()
-
-            for serial_number, firstname, lastname, email, title, num_of_leaves in n:
-                leaves = """SELECT COUNT(l.employee_id), l.employee_id
-                            FROM leaves l
-                            WHERE l.employee_id = %s
-                            GROUP BY l.employee_id"""
-                cursor.execute(leaves, (i,))
-                m = cursor.fetchall()
-
-                for count_employee_id, employee_id in m:
-                    count = count_employee_id
-
-                num_leaves = num_of_leaves
-                leaves = num_leaves - count
-
-                if leaves <= 0:
-                    leaves_left = 0
-                else:
-                    leaves_left = leaves
-
-                with open(f"{args.filename}.csv", "a") as f:
-                    data = csv.writer(f)
-                    a = (
-                        serial_number,
-                        firstname,
-                        lastname,
-                        email,
-                        title,
-                        num_of_leaves,
-                        leaves_left,
-                    )
-                    data.writerow(a)
-
-        conn.commit()
-
-    logger.info(
-        f"CSV file {args.filename}.csv consisting of employee's leave data is generated"
-    )
-    conn.close()
+  db_uri = f"postgresql:///{args.dbname}"
+  session = db.get_session(db_uri)
+  with open(f"{args.filename}.csv","w") as f:
+    data = csv.writer(f)
+    a = "Employee_id","firstname","lastname","email","title","Total number of leaves","Leaves left"
+    data.writerow(a)
+  f.close()
+  query0 = (
+            sa.select
+            (sa.func.count(db.employee.empid))
+            )
+  x = session.execute(query0).fetchall()
+  for i in x:
+    for j in i:
+      count = j
+  for i in range (1,count+1):
+    query1 = (
+              sa.select(db.leaves.empid)
+              .join(db.employee,db.employee.empid==db.leaves.empid)
+              .where(db.employee.empid==i)
+             )
+    data = (session.execute(query1).fetchall())
+    if data == []:
+      query2 = (
+                sa.select
+                (db.employee.empid,
+                 db.employee.firstname,
+                 db.employee.lastname,
+                 db.employee.email,
+                 db.designation.title,
+                 db.designation.max_leaves
+                )
+                .where(db.employee.empid == i,
+                       db.employee.title_id == db.designation.jobid)
+                )
+      n = session.execute(query2).fetchall()
+      for serial_number,firstname,lastname,email,title,num_of_leaves in n:
+        with open(f"{args.filename}.csv","a") as f:
+          data = csv.writer(f)
+          a = serial_number,firstname,lastname,email,title,num_of_leaves,num_of_leaves
+          data.writerow(a)
+        f.close()
+    else:
+      query3 = (
+                sa.select
+                (db.employee.empid,
+                 db.employee.firstname,
+                 db.employee.lastname,
+                 db.employee.email,
+                 db.designation.title,
+                 db.designation.max_leaves
+                )
+                .where(db.employee.empid == i,
+                       db.employee.title_id == db.designation.jobid)
+                )
+      n = session.execute(query3).fetchall()
+      for serial_number,firstname,lastname,email,title,num_of_leaves in n:
+        num_leaves = num_of_leaves
+      query4 = (
+                sa.select
+                          (sa.func.count(db.leaves.empid),
+                          db.leaves.empid)
+                          .where(db.leaves.empid==i)
+                          .group_by(db.leaves.empid)
+               )
+      m = session.execute(query4).fetchall()
+      for count_employee_id,employee_id in m:
+        count = count_employee_id
+      leaves = num_leaves - count
+      if leaves <= 0:
+        leaves_left = 0
+      else:
+        leaves_left = leaves
+      with open(f"{args.filename}.csv","a") as f:
+          data = csv.writer(f)
+          a = serial_number,firstname,lastname,email,title,num_of_leaves,leaves_left
+          data.writerow(a)
+      f.close()
+  logger.info(f"CSV file {args.filename}.csv consisting of employee's leave data is generated") 
 
 
 def implement_vcf(last_name, first_name, job, email, ph_no):
@@ -459,7 +457,7 @@ def main():
             "initdb": create_table,
             "import": add_data_to_table_details,
             "retrieve": retrieving_data_from_database,
-            "genvcard": genrate_vcard_file,
+            "genvcard": generate_vcard_file,
             "initleave": add_data_to_leaves_table,
             "retrieve_leave": retrieve_data_from_new_table,
             "retrieve_csv": generate_leave_csv,
