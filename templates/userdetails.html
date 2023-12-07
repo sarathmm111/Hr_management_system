@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class = "container-fluid">
+<div class = "row">
+<div class = "col-4">
+  <h1>List of employees</h1>
+    <div style= "height: 742px; overflow: scroll;">
+      <ol>
+        {%for u in all_user %}
+        <li> <a href="{{url_for('employee_details', empid = u.empid)}}">{{u.firstname}} {{u.lastname}}</a></li>
+        {%endfor%}
+      </ol>
+  </div>
+</div>
+<div class = "col-8">
+    <h1> Details for {{user.firstname}} {{user.lastname}}</h1>
+    <h2> {{user.title.title}} </h2>
+    <table>
+      <tr>
+        <th> First name </th>
+        <td> {{user.firstname}}</td>
+      </tr>
+      <tr>
+        <th> Last name </th>
+        <td> {{user.lastname}}</td>
+      </tr>
+      <tr>
+        <th> Email </th>
+        <td> {{user.email}}</td>
+      </tr>
+      <tr>
+        <th> Phone </th>
+        <td> {{user.ph_no}}</td>
+      </tr>
+      <tr>
+        <th> Number of leaves taken </th>
+          <td>{{leaves}}</td>
+      </tr>
+      <tr>
+        <th>Maximum number of leaves</th>
+          <td>{{max_leaves}}</td>
+      </tr>
+    </table>
+  <div>
+    <h1> Enter leave data for user </h1>
+<form action="{{ url_for('employee_details', empid=user.empid) }}" method="post">
+    <label for="date">Date:</label>
+    <input type="date" name="date" required>
+    <br>
+    <label for="reason">Reason:</label>
+    <textarea id="reason" name="reason" rows="4" cols="10" required></textarea>
+    <br>
+    <input type="submit" value="Submit">
+</form>
+  </div>
+</p>
+</div>
+  </div>
+</div>
+{% endblock %}

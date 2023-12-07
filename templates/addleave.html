@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1> Enter leave data for user </h1>
+<form method="post">
+    <label for="empid">Employee ID:</label>
+    <input type="text" name="empid" required>
+    <br>
+    <label for="date">Date:</label>
+    <input type="date" name="date" required>
+    <br>
+    <label for="reason">Reason:</label>
+    <textarea id="reason" name="reason" rows="4" cols="10" required></textarea>
+    <br>
+    <input type="submit" value="Submit">
+</form>
+<a href = />Back to home page</a>
+{% endblock %}

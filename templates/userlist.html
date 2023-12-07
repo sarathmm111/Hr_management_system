@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class = "container-fluid">
+<div class = "row">
+  <div class = "col-5">
+  <h1>List of employees</h1>
+  <div style= "height: 735px; overflow: scroll;">
+    <p>
+      <ol>
+        {%for u in users %}
+        <li> <a href="{{url_for('employee_details', empid = u.empid)}}">{{u.firstname}} {{u.lastname}}</a></li>
+        {%endfor%}
+      </ol>
+    </p>
+    </div>
+  </div> 
+  </div>
+</div>
+{% endblock %}
