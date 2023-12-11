@@ -2,15 +2,15 @@ import datetime
 import logging
 from typing import List
 
-from sqlalchemy import String, Integer,Date, create_engine, ForeignKey, UniqueConstraint,func
+from sqlalchemy import String, Integer,Date, create_engine, ForeignKey, UniqueConstraint, func
 from sqlalchemy.orm import DeclarativeBase,Mapped,mapped_column, sessionmaker, relationship
 
-
+from flask_sqlalchemy import SQLAlchemy
 
 class HRDBBase(DeclarativeBase):
   def __repr__(self):
     return f"{self.__class__.__name__}(id={self.id})"
-
+    
 class employee(HRDBBase):
   __tablename__ = "employee"
   __table_args__= (UniqueConstraint('firstname','lastname','email'),)
@@ -21,7 +21,7 @@ class employee(HRDBBase):
   email    : Mapped[str] = mapped_column(String(150))
   ph_no    : Mapped[str] = mapped_column(String(50))
   title    : Mapped["designation"] = relationship(back_populates='employees')
-
+  
 class designation(HRDBBase):
   __tablename__ = "designation"
   __table_args__ = (UniqueConstraint('jobid','title'),)
@@ -37,7 +37,7 @@ class leaves(HRDBBase):
   empid      : Mapped[str] = mapped_column(ForeignKey("employee.empid"))
   date       : Mapped[datetime.date] = mapped_column(Date())
   reason     : Mapped[str] = mapped_column(String(150))
-
+  
 
 def create_all(db_uri):
     logger = logging.getLogger("HR")
@@ -50,3 +50,7 @@ def get_session(db_uri):
     Session = sessionmaker(bind = engine)
     session = Session()
     return session
+    
+    
+  
+ 
