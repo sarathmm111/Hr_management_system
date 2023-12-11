@@ -9,12 +9,16 @@
     <p>
       <ol>
         {%for u in users %}
-        <li> <a href="{{url_for('employee_details', empid = u.empid)}}">{{u.firstname}} {{u.lastname}}</a></li>
+        <li>  <a class="userlink" href="{{url_for('employee_details', empid=u.empid)}}">{{u.firstname}} {{u.lastname}}</a></li>
         {%endfor%}
       </ol>
     </p>
     </div>
-  </div> 
+    </div>
+    <div class="col-7">
+    <p id="userdetails">
+    </p>
+    </div>
   </div>
 </div>
 {% endblock %}
