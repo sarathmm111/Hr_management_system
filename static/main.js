@@ -28,8 +28,9 @@ function gotEmployees(data) {
         <td> ${data.max_leaves}</td>
     </tr>
   </table>
+  <br>
       <h1> Enter leave data for user </h1>
-<form action = /addleave/${data.employee_id} method="post">
+<form class="leaveform" action = /addleave/${data.employee_id} onsubmit="showAlert()" method="post">
   <label for="date">Date:</label>
   <input type="date" name="date" required>
   <br>
@@ -40,8 +41,10 @@ function gotEmployees(data) {
 </form>
 `;
 
+}
 
-
+function showAlert() {
+  alert("Submitted leave form successfully."); 
 }
 
 $(function() {
