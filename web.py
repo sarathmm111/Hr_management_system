@@ -50,15 +50,6 @@ def employee_details(empid):
         "leaves": leaves,
         "max_leaves": max_leaves,
     }
-
-    if request.method == "POST":
-        date = request.form["date"]
-        reason = request.form["reason"]
-        new_leave = models.leaves(empid=empid, date=date, reason=reason)
-        db.session.add(new_leave)
-        db.session.commit()
-        return redirect(url_for("employee_details", empid=empid))
-
     return flask.jsonify(employee_details)
 
 
