@@ -11,7 +11,7 @@ class HRDBBase(DeclarativeBase):
   def __repr__(self):
     return f"{self.__class__.__name__}(id={self.id})"
     
-class employee(HRDBBase):
+class Employee(HRDBBase):
   __tablename__ = "employee"
   __table_args__= (UniqueConstraint('firstname','lastname','email'),)
   empid    : Mapped[int] = mapped_column(primary_key=True)
@@ -20,17 +20,17 @@ class employee(HRDBBase):
   title_id : Mapped[int] = mapped_column(ForeignKey("designation.jobid"))
   email    : Mapped[str] = mapped_column(String(150))
   ph_no    : Mapped[str] = mapped_column(String(50))
-  title    : Mapped["designation"] = relationship(back_populates='employees')
+  title    : Mapped["Designation"] = relationship(back_populates='employees')
   
-class designation(HRDBBase):
+class Designation(HRDBBase):
   __tablename__ = "designation"
   __table_args__ = (UniqueConstraint('jobid','title'),)
   jobid      : Mapped[int] = mapped_column(primary_key=True)
   title      : Mapped[str] = mapped_column(String(100))
   max_leaves : Mapped[int] = mapped_column(Integer)
-  employees  : Mapped[List["employee"]] = relationship(back_populates='title')
+  employees  : Mapped[List["Employee"]] = relationship(back_populates='title')
 
-class leaves(HRDBBase):
+class Leaves(HRDBBase):
   __tablename__ = "leaves"
   __table_args__ = (UniqueConstraint("empid","date"),)
   serial_num : Mapped[int] = mapped_column(primary_key=True)
