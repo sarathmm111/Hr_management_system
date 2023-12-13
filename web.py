@@ -17,26 +17,26 @@ def index():
 
 @app.route("/employees")
 def employees():
-    query = db.select(models.employee).order_by(models.employee.firstname)
+    query = db.select(models.Employee).order_by(models.Employee.firstname)
     users = db.session.execute(query).scalars()
     return render_template("userlist.html", users=users)
 
 
 @app.route("/employees/<int:empid>", methods=["GET", "POST"])
 def employee_details(empid):
-    employee_query = db.select(models.employee).where(models.employee.empid == empid)
+    employee_query = db.select(models.Employee).where(models.Employee.empid == empid)
     user = db.session.execute(employee_query).scalar()
 
     leaves_count_query = (
-        db.select(func.count(models.employee.empid))
-        .join(models.leaves, models.employee.empid == models.leaves.empid)
-        .where(models.employee.empid == empid)
+        db.select(func.count(models.Employee.empid))
+        .join(models.Leaves, models.Employee.empid == models.Leaves.empid)
+        .where(models.Employee.empid == empid)
     )
     leaves = db.session.execute(leaves_count_query).scalar()
 
-    max_leaves_query = db.select(models.designation.max_leaves).where(
-        models.designation.jobid == models.employee.title_id,
-        models.employee.empid == empid,
+    max_leaves_query = db.select(models.Designation.max_leaves).where(
+        models.Designation.jobid == models.Employee.title_id,
+        models.Employee.empid == empid,
     )
     max_leaves = db.session.execute(max_leaves_query).scalar()
 
@@ -58,7 +58,7 @@ def add_leave(empid):
     if request.method == "POST":
         date = request.form["date"]
         reason = request.form["reason"]
-        new_leave = models.leaves(empid=empid, date=date, reason=reason)
+        new_leave = models.Leaves(empid=empid, date=date, reason=reason)
         db.session.add(new_leave)
         db.session.commit()
         return redirect(url_for("employees"))
