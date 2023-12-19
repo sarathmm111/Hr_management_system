@@ -33,7 +33,6 @@ def employees():
         }
         u_list.append(data)
     return flask.jsonify(u_list)
-    # return render_template("userlist.html", users=users)
 
 
 @app.route("/employees/<int:empid>")
@@ -53,6 +52,7 @@ def employee_details(empid):
         models.Employee.empid == empid,
     )
     max_leaves = db.session.execute(max_leaves_query).scalar()
+    leaves_left = max(0, min(int(max_leaves) - int(leaves), max_leaves))
     emp_details = []
     employee_details = {
         "employee_id": user.empid,
@@ -63,6 +63,7 @@ def employee_details(empid):
         "phone": user.ph_no,
         "leaves": leaves,
         "max_leaves": max_leaves,
+        "leaves_left": leaves_left
     }
     emp_details.append(employee_details)
     return flask.jsonify(emp_details)
@@ -80,8 +81,6 @@ def page_not_found(error):
 
 @app.route("/leave/<int:empid>", methods=["GET", "POST"])
 def addleave(empid):
-  employees = db.select(models.Employee).where(models.Employee.empid == empid)
-  user = db.session.execute(employees).scalar()
   if request.method == "POST":
     data = request.get_json()
     date = data.get('date')
