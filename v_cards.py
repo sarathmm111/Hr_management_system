@@ -166,7 +166,7 @@ def create_table(args):
   except (sa.exc.OperationalError,pg.OperationalError) as e:
     raise HRException(e)
 
-def add_data_to_table_details(args):
+def add_data_to_tables(args):
   db_uri = f"postgresql:///{args.dbname}"
   session = models.get_session(db_uri)
   try:
@@ -275,7 +275,7 @@ def add_data_to_leaves_table(args):
       raise HRException (e)
 
 
-def retrieve_data_from_new_table(args):
+def retrieve_data_from_leaves_table(args):
   db_uri = f"postgresql:///{args.dbname}"
   session = models.get_session(db_uri)
   try:
@@ -426,11 +426,11 @@ def main():
         logger(args.verbose)
         operations = {
             "initdb": create_table,
-            "import": add_data_to_table_details,
+            "import": add_data_to_tables,
             "retrieve": retrieving_data_from_database,
             "genvcard": generate_vcard_file,
             "initleave": add_data_to_leaves_table,
-            "retrieve_leave": retrieve_data_from_new_table,
+            "retrieve_leave": retrieve_data_from_leaves_table,
             "retrieve_csv": generate_leave_csv,
             "web"      : implementing_web
         }
