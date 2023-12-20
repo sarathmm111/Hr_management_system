@@ -279,11 +279,11 @@ def generate_vcard_file(args):
                     imp_qrcode = generate_qrcode(
                         lastname, firstname, title, email, phone_number
                     )
-                    logger.debug(f"generating qrcode of {email}")
+                    logger.debug(f"generating vcard of {email}")
                     with open(f"vcf_files/{email}.qr.png", "wb") as f:
                         f.write(imp_qrcode)
-            logger.info(f"generated qrcode of {email}")
-        logger.info(f"generated qrcode of {args.number} employees")
+            logger.info(f"generated vcard of {email}")
+        logger.info(f"generated vcard of {args.number} employees")
     except IndexError as e:
         raise HRException("number of employee out of boundary")
 
