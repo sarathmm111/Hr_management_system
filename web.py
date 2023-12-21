@@ -19,7 +19,7 @@ def index():
 
 @app.route("/employees")
 def employees():
-    query = db.select(models.Employee).order_by(models.Employee.firstname)
+    query = db.select(models.Employee).order_by(models.Employee.empid)
     users = db.session.execute(query).scalars()
     u_list = []
     for user in users:
